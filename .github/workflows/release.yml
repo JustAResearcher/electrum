@@ -1,0 +1,175 @@
+name: Release builds
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build (e.g. v4.7.2-mewc.1)'
+        required: true
+        type: string
+
+permissions:
+  contents: write   # needed to upload artifacts to the GitHub Release
+
+jobs:
+  # --------------------------------------------------------------------------
+  # Linux AppImage (uses upstream contrib/build-linux/appimage/, Docker-based)
+  # --------------------------------------------------------------------------
+  linux-appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Build AppImage
+        run: |
+          ./contrib/build-linux/appimage/build.sh
+
+      - name: List artifacts
+        run: ls -la contrib/build-linux/appimage/dist/ || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: contrib/build-linux/appimage/dist/*
+
+  # --------------------------------------------------------------------------
+  # Linux source tarball (sdist) — pure Python, fast
+  # --------------------------------------------------------------------------
+  linux-sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Build sdist
+        run: |
+          ./contrib/build-linux/sdist/build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-sdist
+          path: dist/*
+
+  # --------------------------------------------------------------------------
+  # Windows installer (PyInstaller + NSIS via Wine in Docker)
+  # --------------------------------------------------------------------------
+  windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Build Windows exe (Wine in Docker)
+        run: |
+          ./contrib/build-wine/build.sh
+
+      - name: List artifacts
+        run: ls -la contrib/build-wine/dist/ || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: contrib/build-wine/dist/*
+
+  # --------------------------------------------------------------------------
+  # macOS .dmg (native PyInstaller on macos-latest)
+  # --------------------------------------------------------------------------
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Build macOS app + dmg
+        run: |
+          ./contrib/osx/make_osx.sh
+
+      - name: List artifacts
+        run: ls -la dist/ || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/*.dmg
+
+  # --------------------------------------------------------------------------
+  # Android APK (buildozer + Android SDK via Docker)
+  # --------------------------------------------------------------------------
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Build Android APK
+        run: |
+          ./contrib/android/build.sh qml all release-unsigned
+
+      - name: List artifacts
+        run: ls -la dist/ || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: dist/*.apk
+
+  # --------------------------------------------------------------------------
+  # Aggregate: download all platform artifacts and attach to the GitHub Release.
+  # Skips platforms whose build job failed so a single-platform failure doesn't
+  # block uploading the others.
+  # --------------------------------------------------------------------------
+  release-upload:
+    needs: [linux-appimage, linux-sdist, windows, macos, android]
+    if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: false
+
+      - name: Flatten + checksum
+        run: |
+          mkdir -p release-files
+          find artifacts/ -type f -not -name 'SHA256SUMS' -exec cp -v {} release-files/ \;
+          cd release-files && sha256sum * > SHA256SUMS && cat SHA256SUMS
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create release if it doesn't exist; then upload (clobber existing assets of same name)
+          if ! gh release view "${{ steps.tag.outputs.tag }}" >/dev/null 2>&1; then
+            gh release create "${{ steps.tag.outputs.tag }}" \
+              --title "Electrum-MEWC ${{ steps.tag.outputs.tag }}" \
+              --generate-notes
+          fi
+          gh release upload "${{ steps.tag.outputs.tag }}" release-files/* --clobber
