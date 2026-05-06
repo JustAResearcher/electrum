@@ -56,7 +56,10 @@ extras_require['fast'] = extras_require['crypto']
 
 
 setup(
-    name="Electrum-MEWC",
+    # Keep the upstream package name "Electrum" so contrib/build-* scripts
+    # (which expect Electrum-${VERSION}.tar.gz on disk) keep working. The
+    # Meowcoin port branding lives in the description / GUI / OS metadata.
+    name="Electrum",
     version=version.ELECTRUM_VERSION,
     python_requires='>={}'.format(MIN_PYTHON_VERSION),
     install_requires=requirements,

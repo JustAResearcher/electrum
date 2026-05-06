@@ -16,27 +16,20 @@ permissions:
 
 jobs:
   # --------------------------------------------------------------------------
-  # Linux AppImage (uses upstream contrib/build-linux/appimage/, Docker-based)
-  # --------------------------------------------------------------------------
-  linux-appimage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
-          fetch-depth: 0
-
-      - name: Build AppImage
-        run: |
-          ./contrib/build-linux/appimage/build.sh
-
-      - name: List artifacts
-        run: ls -la contrib/build-linux/appimage/dist/ || true
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-appimage
-          path: contrib/build-linux/appimage/dist/*
+  # Linux AppImage — DISABLED.
+  # The upstream AppImage build pins exact Alpine package versions in the
+  # type2-runtime Docker image (clang19=19.1.4-r0, bash=5.2.37-r0, etc.) that
+  # have since been bumped in Alpine repos, so `apk add` fails during the
+  # type2-runtime build step. Linux users can install from the sdist
+  # (`pip install Electrum-<version>.tar.gz`) until the runtime pins are
+  # updated upstream, or until we vendor a pre-built type2-runtime binary.
+  # linux-appimage:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: ./contrib/build-linux/appimage/build.sh
+  #     - uses: actions/upload-artifact@v4
+  #       with: { name: linux-appimage, path: contrib/build-linux/appimage/dist/* }
 
   # --------------------------------------------------------------------------
   # Linux source tarball (sdist) — pure Python, fast
@@ -133,7 +126,7 @@ jobs:
   # block uploading the others.
   # --------------------------------------------------------------------------
   release-upload:
-    needs: [linux-appimage, linux-sdist, windows, macos, android]
+    needs: [linux-sdist, windows, macos, android]
     if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:

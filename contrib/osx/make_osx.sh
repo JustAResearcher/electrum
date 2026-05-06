@@ -43,8 +43,13 @@ echo "8373e58da4ea146b3eb1c1f9834f19a319440b6b679b06050b1f9ee3237aa8e4  $CACHEDI
 sudo installer -pkg "$CACHEDIR/$PKG_FILE" -target / \
     || fail "failed to install python"
 
-# sanity check "python3" has the version we just installed.
-FOUND_PY_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+# Use the freshly-installed Python by absolute path. GitHub macos-latest
+# runners ship with newer python3 on PATH, so a `python3 -c` sanity check
+# would resolve to the runner's pre-installed interpreter, not the one we
+# just put down via the .pkg installer.
+PY_BIN="/Library/Frameworks/Python.framework/Versions/${PY_VER_MAJOR}/bin/python${PY_VER_MAJOR}"
+[[ -x "$PY_BIN" ]] || fail "expected freshly-installed python at $PY_BIN"
+FOUND_PY_VERSION=$("$PY_BIN" -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
 if [[ "$FOUND_PY_VERSION" != "$PYTHON_VERSION" ]]; then
     fail "python version mismatch: $FOUND_PY_VERSION != $PYTHON_VERSION"
 fi
@@ -55,7 +60,7 @@ break_legacy_easy_install
 # This helps to avoid older versions of pip-installed dependencies interfering with the build.
 VENV_DIR="$CONTRIB_OSX/build-venv"
 rm -rf "$VENV_DIR"
-python3 -m venv "$VENV_DIR"
+"$PY_BIN" -m venv "$VENV_DIR"
 source "$VENV_DIR/bin/activate"
 
 # don't add debug info to compiled C files (e.g. when pip calls setuptools/wheel calls gcc)
