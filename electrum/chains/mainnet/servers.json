@@ -1,11 +1,17 @@
 {
-    "electrs1.mewc.example": {
+    "meowelectrum.xyz": {
         "pruning": "-",
         "s": "50002",
         "t": "50001",
         "version": "1.4.2"
     },
-    "electrs2.mewc.example": {
+    "meowelectrum2.testtopper.biz": {
+        "pruning": "-",
+        "s": "50002",
+        "t": "50001",
+        "version": "1.4.2"
+    },
+    "electrum.mewccrypto.com": {
         "pruning": "-",
         "s": "50002",
         "t": "50001",
