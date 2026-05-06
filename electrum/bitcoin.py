@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Electrum - lightweight Bitcoin client
+# Electrum-MEWC - lightweight Meowcoin client (forked from spesmilo/electrum)
 # Copyright (C) 2011 thomasv@gitorious
 #
 # Permission is hereby granted, free of charge, to any person
@@ -303,7 +303,7 @@ def construct_script(
     *,
     values: Optional[Mapping[int, Any]] = None,  # can be used to substitute into OPPushDataGeneric
 ) -> bytes:
-    """Constructs bitcoin script from given items."""
+    """Constructs meowcoin script from given items."""
     from .transaction import OPPushDataGeneric
     script = bytearray()
     values = values or {}
@@ -441,7 +441,7 @@ def script_to_address(script: bytes, *, net=None) -> Optional[str]:
 def address_to_script(addr: str, *, net=None) -> bytes:
     if net is None: net = constants.net
     if not is_address(addr, net=net):
-        raise BitcoinException(f"invalid bitcoin address: {neuter_bitcoin_address(addr)}")
+        raise BitcoinException(f"invalid meowcoin address: {neuter_bitcoin_address(addr)}")
     witver, witprog = segwit_addr.decode_segwit_address(net.SEGWIT_HRP, addr)
     if witprog is not None:
         if not (0 <= witver <= 16):
@@ -458,7 +458,7 @@ def address_to_script(addr: str, *, net=None) -> bytes:
 
 
 def neuter_bitcoin_address(addr: str) -> str:
-    """Truncate a bitcoin address, for display in errors that might get sent to the crash reporter,
+    """Truncate a meowcoin address, for display in errors that might get sent to the crash reporter,
     to reduce harm to the user's privacy.
     """
     assert isinstance(addr, str), type(addr)
@@ -483,7 +483,7 @@ def address_to_payload(addr: str, *, net=None) -> Tuple[OnchainOutputType, bytes
     """Return (type, pubkey hash / witness program) for an address."""
     if net is None: net = constants.net
     if not is_address(addr, net=net):
-        raise BitcoinException(f"invalid bitcoin address: {neuter_bitcoin_address(addr)}")
+        raise BitcoinException(f"invalid meowcoin address: {neuter_bitcoin_address(addr)}")
     witver, witprog = segwit_addr.decode_segwit_address(net.SEGWIT_HRP, addr)
     if witprog is not None:
         if witver == 0:

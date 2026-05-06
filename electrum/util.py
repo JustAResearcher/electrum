@@ -1,4 +1,4 @@
-# Electrum - lightweight Bitcoin client
+# Electrum-MEWC - lightweight Meowcoin client (forked from spesmilo/electrum)
 # Copyright (C) 2011 Thomas Voegtlin
 #
 # Permission is hereby granted, free of charge, to any person
@@ -93,18 +93,18 @@ def all_subclasses(cls) -> Set:
 ca_path = certifi.where()
 
 
-base_units = {'BTC':8, 'mBTC':5, 'bits':2, 'sat':0}
+base_units = {'MEWC':8, 'mMEWC':5, 'bits':2, 'sat':0}
 base_units_inverse = inv_dict(base_units)
-base_units_list = ['BTC', 'mBTC', 'bits', 'sat']  # list(dict) does not guarantee order
+base_units_list = ['MEWC', 'mMEWC', 'bits', 'sat']  # list(dict) does not guarantee order
 
-DECIMAL_POINT_DEFAULT = 5  # mBTC
+DECIMAL_POINT_DEFAULT = 5  # mMEWC
 
 
 class UnknownBaseUnit(Exception): pass
 
 
 def decimal_point_to_base_unit_name(dp: int) -> str:
-    # e.g. 8 -> "BTC"
+    # e.g. 8 -> "MEWC"
     try:
         return base_units_inverse[dp]
     except KeyError:
@@ -113,7 +113,7 @@ def decimal_point_to_base_unit_name(dp: int) -> str:
 
 def base_unit_name_to_decimal_point(unit_name: str) -> int:
     """Returns the max number of digits allowed after the decimal point."""
-    # e.g. "BTC" -> 8
+    # e.g. "MEWC" -> 8
     try:
         return base_units[unit_name]
     except KeyError:
@@ -851,7 +851,7 @@ def format_satoshis(
     # add leading/trailing whitespaces so that numbers can be aligned in a column
     if whitespaces:
         target_fract_len = overall_precision
-        target_integer_len = 14 - decimal_point  # should be enough for up to unsigned 999999 BTC
+        target_integer_len = 14 - decimal_point  # should be enough for up to unsigned 999999 MEWC
         if add_thousands_sep:
             target_fract_len += max(0, (target_fract_len - 1) // 3)
             target_integer_len += max(0, (target_integer_len - 1) // 3)

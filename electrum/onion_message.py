@@ -1,4 +1,4 @@
-# Electrum - Lightweight Bitcoin Client
+# Electrum - Lightweight Meowcoin Client
 # Copyright (c) 2023-2024 Thomas Voegtlin
 #
 # Permission is hereby granted, free of charge, to any person

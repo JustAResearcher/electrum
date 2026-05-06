@@ -1,4 +1,4 @@
-# Electrum - lightweight Bitcoin client
+# Electrum-MEWC - lightweight Meowcoin client (forked from spesmilo/electrum)
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation files

@@ -140,7 +140,7 @@ def test_pin_unlocked(func):
         except OSError as e:
             _logger.exception('')
             raise UserFacingException(
-                _('Communication with Ledger failed. Open the Bitcoin app and try again.') + f'\n{str(e)}',
+                _('Communication with Ledger failed. Open the Meowcoin app and try again.') + f'\n{str(e)}',
             )
     return catch_exception
 
@@ -245,9 +245,9 @@ def get_bip44_purpose(addrtype: 'AddressType') -> int:
 
 def get_bip44_chain(chain: 'Chain') -> int:
     """
-    Determine the BIP 44 coin type based on the Bitcoin chain type.
+    Determine the BIP 44 coin type based on the Meowcoin chain type.
 
-    For the Bitcoin mainnet chain, this returns 0. For the other chains, this returns 1.
+    For the Meowcoin mainnet chain, this returns 0. For the other chains, this returns 1.
 
     :param chain: The chain
     """
@@ -331,7 +331,7 @@ class Ledger_Client(HardwareClientBase, ABC):
         except (ledger_bitcoin.exception.errors.InsNotSupportedError,
                 ledger_bitcoin.exception.errors.ClaNotSupportedError) as e:
             # This can happen on very old versions.
-            # E.g. with a "nano s", with bitcoin app 1.1.10, SE 1.3.1, MCU 1.0,
+            # E.g. with a "nano s", with meowcoin app 1.1.10, SE 1.3.1, MCU 1.0,
             #      - on machine one, ghost43 got InsNotSupportedError
             #      - on machine two, thomasv got ClaNotSupportedError
             #      unclear why the different exceptions, ledger_bitcoin version 0.2.1 in both cases

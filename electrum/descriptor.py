@@ -43,7 +43,7 @@ MAX_TAPROOT_DEPTH = 128
 # we guess that signatures will be 72 bytes long
 # note: DER-encoded ECDSA signatures are 71 or 72 bytes in practice
 #       See https://bitcoin.stackexchange.com/questions/77191/what-is-the-maximum-size-of-a-der-encoded-ecdsa-signature
-#       We assume low S (as that is a bitcoin standardness rule).
+#       We assume low S (as that is a meowcoin standardness rule).
 #       We do not assume low R (even though the sigs we create conform), as external sigs,
 #       e.g. from a hw signer cannot be expected to have a low R.
 DUMMY_DER_SIG = 72 * b"\x00"
@@ -369,7 +369,7 @@ class Descriptor(object):
         sigdata: Mapping[bytes, bytes] = None,  # pubkey -> sig
         allow_dummy: bool = False,
     ) -> ScriptSolutionTop:
-        """Construct a witness and/or scriptSig to be used in a txin, to satisfy the bitcoin SCRIPT.
+        """Construct a witness and/or scriptSig to be used in a txin, to satisfy the meowcoin SCRIPT.
 
         Raises MissingSolutionPiece if satisfaction is not yet possible due to e.g. missing a signature,
         unless `allow_dummy` is set to True, in which case dummy data is used where needed (e.g. for size estimation).

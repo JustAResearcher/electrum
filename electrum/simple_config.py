@@ -869,7 +869,7 @@ Warning: setting this to too low will result in lots of payment failures."""),
     )
     BTC_AMOUNTS_ADD_THOUSANDS_SEP = ConfigVar(
         'amt_add_thousands_sep', default=False, type_=bool,
-        short_desc=lambda: _("Add thousand separators to bitcoin amounts"),
+        short_desc=lambda: _("Add thousand separators to meowcoin amounts"),
     )
 
     BLOCK_EXPLORER = ConfigVar(

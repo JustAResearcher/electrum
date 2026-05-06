@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Bitcoin client
+# Electrum-MEWC - lightweight Meowcoin client (forked from spesmilo/electrum)
 # Copyright (C) 2015 Thomas Voegtlin
 #
 # Permission is hereby granted, free of charge, to any person
@@ -1417,7 +1417,7 @@ class WalletDBUpgrader(Logger):
             if not bitcoin.is_address(first_address):
                 neutered_addr = first_address[:5] + '..' + first_address[-2:]
                 raise WalletFileException(
-                    f"The addresses in this wallet are not bitcoin addresses. "
+                    f"The addresses in this wallet are not meowcoin addresses. "
                     f"e.g. {neutered_addr} (len={len(first_address)})")
         # if so, save genesis hash
         self.data['genesis_blockhash'] = constants.net.GENESIS

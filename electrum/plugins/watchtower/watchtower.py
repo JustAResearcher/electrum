@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - Lightweight Bitcoin Client
+# Electrum - Lightweight Meowcoin Client
 # Copyright (C) 2023 The Electrum Developers
 #
 # Permission is hereby granted, free of charge, to any person

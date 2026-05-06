@@ -866,7 +866,7 @@ class SwapManager(Logger):
             tx: PartialTransaction = None,
             channels = None,
     ) -> Optional[str]:
-        """send on-chain BTC, receive on Lightning
+        """send on-chain MEWC, receive on Lightning
 
         Old (removed) flow:
         - User generates an LN invoice with RHASH, and knows preimage.

@@ -1150,7 +1150,7 @@ class WalletWizardTestCase(WizardTestCase):
         v = w.resolve_next(v.view, d)
         with self.assertRaises(AssertionError) as ctx:
             wallet = self._set_password_and_check_address(v=v, w=w, recv_addr=None)
-        self.assertTrue("expected bitcoin addr" in ctx.exception.args[0])
+        self.assertTrue("expected meowcoin addr" in ctx.exception.args[0])
 
     async def test_create_imported_wallet_from_wif_keys(self):
         w = self._wizard_for(wallet_type='imported')

@@ -1,4 +1,4 @@
-# Electrum - lightweight Bitcoin client
+# Electrum-MEWC - lightweight Meowcoin client (forked from spesmilo/electrum)
 # Copyright (C) 2012 thomasv@ecdsa.org
 #
 # Permission is hereby granted, free of charge, to any person
@@ -62,7 +62,7 @@ class InvalidHeader(Exception):
 def _wire_header_size(version: int, timestamp: int) -> int:
     """Return the on-the-wire size (80 or 120) implied by version + timestamp.
 
-    Mirrors Meowcoin Core CBlockHeader::SERIALIZE_METHODS:
+    Mirrors Bitcoin Core CBlockHeader::SERIALIZE_METHODS:
     AuxPoW blocks (version bit 0x100) and pre-KAWPOW blocks (timestamp <
     activation) use the 80-byte form; everything else uses the 120-byte form.
     electrs-mewc strips AuxPoW data server-side, so AuxPoW headers arrive as

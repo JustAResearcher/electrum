@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Bitcoin client
+# Electrum-MEWC - lightweight Meowcoin client (forked from spesmilo/electrum)
 # Copyright (C) 2014 Thomas Voegtlin
 #
 # Permission is hereby granted, free of charge, to any person
@@ -84,12 +84,12 @@ class SynchronizerBase(NetworkJobOnDefaultServer):
             self.session.unsubscribe(self.status_queue)
 
     def add(self, addr: str) -> None:
-        if not is_address(addr): raise ValueError(f"invalid bitcoin address {neuter_bitcoin_address(addr)}")
+        if not is_address(addr): raise ValueError(f"invalid meowcoin address {neuter_bitcoin_address(addr)}")
         self._adding_addrs.add(addr)  # this lets is_up_to_date already know about addr
 
     async def _add_address(self, addr: str):
         try:
-            if not is_address(addr): raise ValueError(f"invalid bitcoin address {neuter_bitcoin_address(addr)}")
+            if not is_address(addr): raise ValueError(f"invalid meowcoin address {neuter_bitcoin_address(addr)}")
             if addr in self.requested_addrs: return
             self.requested_addrs.add(addr)
             await self.taskgroup.spawn(self._subscribe_to_address, addr)

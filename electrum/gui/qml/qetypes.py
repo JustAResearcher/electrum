@@ -5,7 +5,7 @@ from electrum.i18n import _
 
 
 class QEAmount(QObject):
-    """Container for bitcoin amounts that can be passed around more
+    """Container for meowcoin amounts that can be passed around more
        easily between python, QML-property and QML-javascript contexts.
        Note: millisat and sat amounts are not synchronized!
 

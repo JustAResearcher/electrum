@@ -295,7 +295,7 @@ class Plugin(TimelockRecoveryPlugin):
             (
                 _("Recipient of the funds, after the cancellation time window has expired")
                 + "\n\n"
-                + _("This field must contain a single Bitcoin address, or multiple lines in the format: 'address, amount'.") + "\n"
+                + _("This field must contain a single Meowcoin address, or multiple lines in the format: 'address, amount'.") + "\n"
                 + "\n"
                 + _("If multiple lines are used, at least one line must be set to 'max', using the '!' special character.") + "\n"
                 + _("Integers weights can also be used in conjunction with '!', "
@@ -477,7 +477,7 @@ class Plugin(TimelockRecoveryPlugin):
         else:
             if not pi.is_available() or pi.type != PaymentIdentifierType.SPK or not pi.spk_is_address:
                 payto_e.setStyleSheet(ColorScheme.RED.as_stylesheet(True))
-                payto_e.setToolTip(_("Invalid address type - must be a Bitcoin address."))
+                payto_e.setToolTip(_("Invalid address type - must be a Meowcoin address."))
                 return False
             assert pi.spk and pi.spk_is_address
             if context.wallet.is_mine(pi.text):
@@ -922,7 +922,7 @@ class Plugin(TimelockRecoveryPlugin):
         step1_text += (
             f"\nTo broadcast the Alert transaction, "
             f"{'scan the QR code on the next page' if len(alert_raw_parts) <= 1 else f'scan the QR codes on the next {len(alert_raw_parts)} pages, concatenate the contents of the QR codes (without spaces),'} "
-            f"and paste the content in one of the following Bitcoin block-explorer websites:\n"
+            f"and paste the content in one of the following Meowcoin block-explorer websites:\n"
             "• https://mempool.space/tx/push\n"
             "• https://blockstream.info/tx/push\n"
             "• https://coinb.in/#broadcast\n\n"
@@ -1233,7 +1233,7 @@ class Plugin(TimelockRecoveryPlugin):
             f"The Recovery Guide (the other document) will allow to transfer the funds from this wallet to "
             f"a different wallet within {context.timelock_days} days. To prevent this from happening accidentally "
             f"or maliciously by someone who found that document, you should periodically check if the Alert "
-            f"transaction has been broadcast, using a Bitcoin block-explorer website such as:"
+            f"transaction has been broadcast, using a Meowcoin block-explorer website such as:"
         )
         drawn_rect = painter.drawText(
             QRectF(20, current_height, page_width - 40, page_height),
@@ -1278,7 +1278,7 @@ class Plugin(TimelockRecoveryPlugin):
         cancellation_text = (
             "In case the Alert transaction has been broadcast, and you want to stop the funds from "
             "leaving this wallet, you can scan the QR code on page 2, and broadcast "
-            "the content using one of the following Bitcoin block-explorer websites:\n\n"
+            "the content using one of the following Meowcoin block-explorer websites:\n\n"
             "• https://mempool.space/tx/push\n"
             "• https://blockstream.info/tx/push\n"
             "• https://coinb.in/#broadcast\n\n"

@@ -1369,10 +1369,10 @@ class TestPeerDirect(TestPeer):
     async def test_payment_recv_mpp_confusion1(self):
         """Regression test for https://github.com/spesmilo/electrum/security/advisories/GHSA-8r85-vp7r-hjxf"""
         # This test checks that the following attack does not work:
-        #   - Bob creates invoice1: 1 BTC, H1, S1
-        #   - Bob creates invoice2: 1 BTC, H2, S2;  both given to attacker to pay
-        #   - Alice sends htlc1: 0.1 BTC, H1, S1  (total_msat=1 BTC)
-        #   - Alice sends htlc2: 0.9 BTC, H2, S1  (total_msat=1 BTC)
+        #   - Bob creates invoice1: 1 MEWC, H1, S1
+        #   - Bob creates invoice2: 1 MEWC, H2, S2;  both given to attacker to pay
+        #   - Alice sends htlc1: 0.1 MEWC, H1, S1  (total_msat=1 MEWC)
+        #   - Alice sends htlc2: 0.9 MEWC, H2, S1  (total_msat=1 MEWC)
         #   - Bob(victim) reveals preimage for H1 and fulfills htlc1 (fails other)
         graph = self.prepare_chans_and_peers_in_graph(self.GRAPH_DEFINITIONS['single_chan'])
         p1, p2 = graph.peers.values()
@@ -1445,9 +1445,9 @@ class TestPeerDirect(TestPeer):
     async def test_payment_recv_mpp_confusion2(self):
         """Regression test for https://github.com/spesmilo/electrum/security/advisories/GHSA-8r85-vp7r-hjxf"""
         # This test checks that the following attack does not work:
-        #   - Bob creates invoice: 1 BTC
-        #   - Alice sends htlc1: 0.1 BTC  (total_msat=0.2 BTC)
-        #   - Alice sends htlc2: 0.1 BTC  (total_msat=1 BTC)
+        #   - Bob creates invoice: 1 MEWC
+        #   - Alice sends htlc1: 0.1 MEWC  (total_msat=0.2 MEWC)
+        #   - Alice sends htlc2: 0.1 MEWC  (total_msat=1 MEWC)
         #   - Bob(victim) reveals preimage and fulfills htlc2 (fails other)
         graph = self.prepare_chans_and_peers_in_graph(self.GRAPH_DEFINITIONS['single_chan'])
         p1, p2 = graph.peers.values()

@@ -56,7 +56,7 @@ extras_require['fast'] = extras_require['crypto']
 
 
 setup(
-    name="Electrum",
+    name="Electrum-MEWC",
     version=version.ELECTRUM_VERSION,
     python_requires='>={}'.format(MIN_PYTHON_VERSION),
     install_requires=requirements,
@@ -73,10 +73,9 @@ setup(
     include_package_data=True,
     scripts=['electrum/electrum'],
     data_files=data_files,
-    description="Lightweight Bitcoin Wallet",
-    author="Thomas Voegtlin",
-    author_email="thomasv@electrum.org",
+    description="Lightweight Meowcoin Wallet (Electrum fork)",
+    author="The Electrum developers (Meowcoin port)",
     license="MIT Licence",
-    url="https://electrum.org",
-    long_description="""Lightweight Bitcoin Wallet""",
+    url="https://github.com/JustAResearcher/electrum",
+    long_description="""Electrum-MEWC is a lightweight Meowcoin wallet, forked from the Bitcoin Electrum client and adapted to talk to electrs-mewc backends.""",
 )

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Bitcoin client
+# Electrum-MEWC - lightweight Meowcoin client (forked from spesmilo/electrum)
 # Copyright (C) 2011 thomasv@gitorious
 #
 # Permission is hereby granted, free of charge, to any person
@@ -106,7 +106,7 @@ def satoshis(amount):
 def format_satoshis(x: Union[float, int, Decimal, None]) -> Optional[str]:
     """
     input: satoshis as a Number
-    output: str formatted as bitcoin amount
+    output: str formatted as meowcoin amount
     """
     if x is None:
         return None
@@ -322,8 +322,8 @@ class Commands(Logger):
     @command('')
     async def restore(self, text, passphrase=None, password=None, encrypt_file=True, wallet_path=None):
         """Restore a wallet from text. Text can be a seed phrase, a master
-        public key, a master private key, a list of bitcoin addresses
-        or bitcoin private keys.
+        public key, a master private key, a list of meowcoin addresses
+        or meowcoin private keys.
         If you want to be prompted for an argument, type '?' or ':' (concealed)
 
         arg:str:text:seed phrase
@@ -475,7 +475,7 @@ class Commands(Logger):
         Return the transaction history of any address. Note: This is a
         walletless server query, results are not checked by SPV.
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         """
         sh = bitcoin.address_to_scripthash(address)
         return await self.network.get_history_for_scripthash(sh)
@@ -503,7 +503,7 @@ class Commands(Logger):
         Returns the UTXO list of any address. Note: This
         is a walletless server query, results are not checked by SPV.
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         """
         sh = bitcoin.address_to_scripthash(address)
         return await self.network.listunspent_for_scripthash(sh)
@@ -646,7 +646,7 @@ class Commands(Logger):
         """
         Freeze address. Freeze the funds at one of your wallet\'s addresses
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         """
         return wallet.set_frozen_state_of_addresses([address], True)
 
@@ -655,7 +655,7 @@ class Commands(Logger):
         """
         Unfreeze address. Unfreeze the funds at one of your wallet\'s address
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         """
         return wallet.set_frozen_state_of_addresses([address], False)
 
@@ -683,7 +683,7 @@ class Commands(Logger):
         """
         Get private keys of addresses. You may pass a single wallet address, or a list of wallet addresses.
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         """
         if isinstance(address, str):
             address = address.strip()
@@ -705,7 +705,7 @@ class Commands(Logger):
         """
         Check if address is in wallet. Return true if and only address is in wallet
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         """
         return wallet.is_mine(address)
 
@@ -718,7 +718,7 @@ class Commands(Logger):
     async def validateaddress(self, address):
         """Check that an address is valid.
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         """
         return is_address(address)
 
@@ -727,7 +727,7 @@ class Commands(Logger):
         """
         Return the public keys for a wallet address.
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         """
         return wallet.get_public_keys(address)
 
@@ -751,7 +751,7 @@ class Commands(Logger):
         Return the balance of any address. Note: This is a walletless
         server query, results are not checked by SPV.
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         """
         sh = bitcoin.address_to_scripthash(address)
         out = await self.network.get_balance_for_scripthash(sh)
@@ -888,8 +888,8 @@ class Commands(Logger):
         privkey to a destination address. The transaction will not be broadcast.
 
         arg:str:privkey:Private key. Type \'?\' to get a prompt.
-        arg:str:destination:Bitcoin address, contact or alias
-        arg:decimal:fee:Transaction fee (absolute, in BTC)
+        arg:str:destination:Meowcoin address, contact or alias
+        arg:decimal:fee:Transaction fee (absolute, in MEWC)
         arg:decimal:feerate:Transaction fee rate (in sat/vbyte)
         arg:int:imax:Maximum number of inputs
         """
@@ -911,7 +911,7 @@ class Commands(Logger):
         """Sign a message with a key. Use quotes if your message contains
         whitespaces
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         arg:str:message:Clear text message. Use quotes if it contains spaces.
         """
         sig = wallet.sign_message(address, message, password)
@@ -921,7 +921,7 @@ class Commands(Logger):
     async def verifymessage(self, address, signature, message):
         """Verify a signature.
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         arg:str:message:Clear text message. Use quotes if it contains spaces.
         arg:str:signature:The signature, base64-encoded.
         """
@@ -950,9 +950,9 @@ class Commands(Logger):
                     unsigned=False, rbf=True, password=None, locktime=None, addtransaction=False, wallet: Abstract_Wallet = None):
         """Create an on-chain transaction.
 
-        arg:str:destination:Bitcoin address, contact or alias
-        arg:decimal_or_max:amount:Amount to be sent (in BTC). Type '!' to send the maximum available.
-        arg:decimal:fee:Transaction fee (absolute, in BTC)
+        arg:str:destination:Meowcoin address, contact or alias
+        arg:decimal_or_max:amount:Amount to be sent (in MEWC). Type '!' to send the maximum available.
+        arg:decimal:fee:Transaction fee (absolute, in MEWC)
         arg:decimal:feerate:Transaction fee rate (in sat/vbyte)
         arg:str:from_addr:Source address (must be a wallet address; use sweep to spend from non-wallet address)
         arg:str:change_addr:Change address. Default is a spare address, or the source address if it's not in the wallet
@@ -982,9 +982,9 @@ class Commands(Logger):
                         unsigned=False, rbf=True, password=None, locktime=None, addtransaction=False, wallet: Abstract_Wallet = None):
         """Create a multi-output transaction.
 
-        arg:json:outputs:json list of ["address", "amount in BTC"]
+        arg:json:outputs:json list of ["address", "amount in MEWC"]
         arg:bool:rbf:Whether to signal opt-in Replace-By-Fee in the transaction (true/false)
-        arg:decimal:fee:Transaction fee (absolute, in BTC)
+        arg:decimal:fee:Transaction fee (absolute, in MEWC)
         arg:decimal:feerate:Transaction fee rate (in sat/vbyte)
         arg:str:from_addr:Source address (must be a wallet address; use sweep to spend from non-wallet address)
         arg:str:change_addr:Change address. Default is a spare address, or the source address if it's not in the wallet
@@ -1131,7 +1131,7 @@ class Commands(Logger):
     @command('w')
     async def setlabel(self, key, label, wallet: Abstract_Wallet = None):
         """
-        Assign a label to an item. Item may be a bitcoin address or a
+        Assign a label to an item. Item may be a meowcoin address or a
         transaction ID
 
         arg:str:key:Key
@@ -1590,7 +1590,7 @@ class Commands(Logger):
         Watch an address. Every time the address changes, a http POST is sent to the URL.
         Call with an empty URL to stop watching an address.
 
-        arg:str:address:Bitcoin address
+        arg:str:address:Meowcoin address
         arg:str:URL:The callback URL
         """
         if not hasattr(self, "_notifier"):
@@ -1751,8 +1751,8 @@ class Commands(Logger):
         Open a lightning channel with a peer
 
         arg:str:connection_string:Lightning network node ID or network address
-        arg:decimal_or_max:amount:funding amount (in BTC)
-        arg:decimal:push_amount:Push initial amount (in BTC)
+        arg:decimal_or_max:amount:funding amount (in MEWC)
+        arg:decimal:push_amount:Push initial amount (in MEWC)
         arg:bool:public:The channel will be announced
         arg:bool:zeroconf:request zeroconf channel
         """
@@ -2007,7 +2007,7 @@ class Commands(Logger):
 
         arg:str:from_scid:Short channel ID
         arg:str:dest_scid:Short channel ID
-        arg:decimal:amount:Amount (in BTC)
+        arg:decimal:amount:Amount (in MEWC)
 
         """
         from .lnutil import ShortChannelID
@@ -2055,10 +2055,10 @@ class Commands(Logger):
     @command('wnpl')
     async def normal_swap(self, onchain_amount, lightning_amount, password=None, wallet: Abstract_Wallet = None):
         """
-        Normal submarine swap: send on-chain BTC, receive on Lightning
+        Normal submarine swap: send on-chain MEWC, receive on Lightning
 
-        arg:decimal_or_dryrun:lightning_amount:Amount to be received, in BTC. Set it to 'dryrun' to receive a value
-        arg:decimal_or_dryrun:onchain_amount:Amount to be sent, in BTC. Set it to 'dryrun' to receive a value
+        arg:decimal_or_dryrun:lightning_amount:Amount to be received, in MEWC. Set it to 'dryrun' to receive a value
+        arg:decimal_or_dryrun:onchain_amount:Amount to be sent, in MEWC. Set it to 'dryrun' to receive a value
         """
         sm = wallet.lnworker.swap_manager
         assert self.config.SWAPSERVER_NPUB or self.config.SWAPSERVER_URL, \
@@ -2099,8 +2099,8 @@ class Commands(Logger):
         """
         Reverse submarine swap: send on Lightning, receive on-chain
 
-        arg:decimal_or_dryrun:lightning_amount:Amount to be sent, in BTC. Set it to 'dryrun' to receive a value
-        arg:decimal_or_dryrun:onchain_amount:Amount to be received, in BTC. Set it to 'dryrun' to receive a value
+        arg:decimal_or_dryrun:lightning_amount:Amount to be sent, in MEWC. Set it to 'dryrun' to receive a value
+        arg:decimal_or_dryrun:onchain_amount:Amount to be received, in MEWC. Set it to 'dryrun' to receive a value
         arg:decimal_or_dryrun:prepayment:Lightning payment required by the swap provider in order to cover their mining fees. This is included in lightning_amount. However, this part of the operation is not trustless; the provider is trusted to fail this payment if the swap fails.
         """
         sm = wallet.lnworker.swap_manager
@@ -2159,9 +2159,9 @@ class Commands(Logger):
         to_ccy = to_ccy.upper()
         # Default currencies
         if from_ccy == '':
-            from_ccy = "BTC" if to_ccy != "BTC" else self.daemon.fx.ccy
+            from_ccy = "MEWC" if to_ccy != "MEWC" else self.daemon.fx.ccy
         if to_ccy == '':
-            to_ccy = "BTC" if from_ccy != "BTC" else self.daemon.fx.ccy
+            to_ccy = "MEWC" if from_ccy != "MEWC" else self.daemon.fx.ccy
         # Get current rates
         rate_from = self.daemon.fx.exchange.get_cached_spot_quote(from_ccy)
         rate_to = self.daemon.fx.exchange.get_cached_spot_quote(to_ccy)

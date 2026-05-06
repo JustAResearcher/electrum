@@ -331,7 +331,7 @@ class ToyServer(Logger):
             conflict_sat_per_kvbyte = 4000 * conflict_fee // conflict_wu
             repl_fee = self._get_fee_sat_paid_by_tx(newtx)
             repl_sat_per_kvbyte = 4000 * repl_fee // newtx.estimated_weight()
-            # our mempool replacement policy is simple but still similar to bitcoin core:
+            # our mempool replacement policy is simple but still similar to meowcoin core:
             if not (
                 repl_fee > conflict_fee
                 and repl_sat_per_kvbyte >= conflict_sat_per_kvbyte + self.min_relay_feerate
