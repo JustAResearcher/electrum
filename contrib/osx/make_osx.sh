@@ -186,6 +186,11 @@ cp -f "$DLL_TARGET_DIR/libusb-1.0.dylib" "$PROJECT_ROOT/electrum/" || fail "Coul
 # opt out of compiling C extensions
 export YARL_NO_EXTENSIONS=1
 export PROPCACHE_NO_EXTENSIONS=1
+# frozenlist 1.6+ ships a PEP 517 backend that imports a non-existent
+# `main` symbol from `Cython.Build.Cythonize` (suppress(ImportError) hides
+# the failure, then `_cythonize_cli_cmd` is undefined when called). Build
+# pure-Python instead — same runtime semantics, just slightly slower.
+export FROZENLIST_NO_EXTENSIONS=1
 
 export ELECTRUM_ECC_DONT_COMPILE=1
 
