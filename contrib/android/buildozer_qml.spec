@@ -211,11 +211,13 @@ android.manifest.launch_mode = singleTask
 
 # (str) The Android arch to build for, choices: armeabi-v7a, arm64-v8a, x86, x86_64
 # note: can be overwritten by APP_ANDROID_ARCH env var
-# Restricted to arm64-v8a only — building all 4 ABIs cold takes >6h on GitHub
-# Actions runners (CPython + PyQt6 + Qt resources cross-compiled per ABI). Most
-# modern Android devices are arm64-v8a; armeabi-v7a/x86/x86_64 can be added
-# back once the CI caches buildozer's `.buildozer/` between runs.
-android.archs = arm64-v8a
+# arm64-v8a covers all 64-bit Android phones (the vast majority).
+# armeabi-v7a covers older 32-bit ARM devices; with the actions/cache step in
+# .github/workflows/release.yml caching .buildozer/ between runs the second
+# ABI is cheap on warm cache.
+# x86 / x86_64 are deliberately omitted — almost no production Android device
+# uses them and they'd push the cold build past GitHub's 6h cap.
+android.archs = arm64-v8a, armeabi-v7a
 
 # (int) overrides automatic versionCode computation (used in build.gradle)
 # this is not the same as app version and should only be edited if you know what you're doing
