@@ -56,7 +56,7 @@ from . import x509
 from . import pem
 from . import version
 from . import blockchain
-from .blockchain import Blockchain, HEADER_SIZE, CHUNK_SIZE
+from .blockchain import Blockchain, HEADER_SIZE, CHUNK_SIZE, HEADER_SIZE_LEGACY, HEADER_SIZE_KAWPOW, _wire_header_size
 from . import bitcoin
 from .bitcoin import DummyAddress, DummyAddressUsedInTxException
 from . import constants
@@ -875,22 +875,48 @@ class Interface(Logger):
         assert_dict_contains_field(res, field_name='max')
         assert_non_negative_integer(res['count'])
         assert_non_negative_integer(res['max'])
+        # Meowcoin headers are variable-size on the wire (80 or 120 bytes).
+        # We can't enforce a fixed length; instead we accept any header whose
+        # declared size matches the version+timestamp prefix.
+        def _validate_meowcoin_header_bytes(b: bytes) -> None:
+            if len(b) not in (HEADER_SIZE_LEGACY, HEADER_SIZE_KAWPOW):
+                raise RequestCorrupted(f"unexpected header byte length {len(b)}")
+            version = int.from_bytes(b[0:4], byteorder='little')
+            timestamp = int.from_bytes(b[68:72], byteorder='little')
+            expected = _wire_header_size(version, timestamp)
+            if len(b) != expected:
+                raise RequestCorrupted(
+                    f"header size {len(b)} disagrees with version/timestamp prefix (expected {expected})")
+
         if self.active_protocol_tuple >= (1, 6):
             hex_headers_list = assert_dict_contains_field(res, field_name='headers')
             assert_list_or_tuple(hex_headers_list)
+            headers = []
             for item in hex_headers_list:
                 assert_hex_str(item)
-                if len(item) != HEADER_SIZE * 2:
-                    raise RequestCorrupted(f"invalid header size. got {len(item)//2}, expected {HEADER_SIZE}")
+                raw = bfh(item)
+                _validate_meowcoin_header_bytes(raw)
+                headers.append(raw)
             if len(hex_headers_list) != res['count']:
                 raise RequestCorrupted(f"{len(hex_headers_list)=} != {res['count']=}")
-            headers = list(bfh(hex_header) for hex_header in hex_headers_list)
-        else: # proto 1.4
+        else:  # proto 1.4
             hex_headers_concat = assert_dict_contains_field(res, field_name='hex')
             assert_hex_str(hex_headers_concat)
-            if len(hex_headers_concat) != HEADER_SIZE * 2 * res['count']:
-                raise RequestCorrupted('inconsistent chunk hex and count')
-            headers = list(util.chunks(bfh(hex_headers_concat), size=HEADER_SIZE))
+            blob = bfh(hex_headers_concat)
+            headers = []
+            off = 0
+            while off < len(blob):
+                if len(blob) - off < HEADER_SIZE_LEGACY:
+                    raise RequestCorrupted('chunk truncated')
+                version = int.from_bytes(blob[off:off+4], byteorder='little')
+                timestamp = int.from_bytes(blob[off+68:off+72], byteorder='little')
+                wire_size = _wire_header_size(version, timestamp)
+                if len(blob) - off < wire_size:
+                    raise RequestCorrupted('chunk truncated mid-header')
+                headers.append(blob[off:off+wire_size])
+                off += wire_size
+            if len(headers) != res['count']:
+                raise RequestCorrupted(f"parsed {len(headers)} headers but server claims {res['count']}")
         # we never request more than MAX_NUM_HEADERS_IN_REQUEST headers, but we enforce those fit in a single response
         if res['max'] < MAX_NUM_HEADERS_PER_REQUEST:
             raise RequestCorrupted(f"server uses too low 'max' count for block.headers: {res['max']} < {MAX_NUM_HEADERS_PER_REQUEST}")

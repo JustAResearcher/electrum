@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Electrum - lightweight Bitcoin client
+# Electrum - lightweight Meowcoin client (forked from Bitcoin Electrum)
 # Copyright (C) 2018 The Electrum developers
 #
 # Permission is hereby granted, free of charge, to any person
@@ -55,10 +55,20 @@ def create_fallback_node_list(fallback_nodes_dict: dict[str, dict]) -> List[LNPe
     return fallback_nodes
 
 
-GIT_REPO_URL = "https://github.com/spesmilo/electrum"
-GIT_REPO_ISSUES_URL = "https://github.com/spesmilo/electrum/issues"
-RELEASE_NOTES_URL = "https://raw.githubusercontent.com/spesmilo/electrum/refs/heads/master/RELEASE-NOTES"
+GIT_REPO_URL = "https://github.com/JustAResearcher/electrum"
+GIT_REPO_ISSUES_URL = "https://github.com/JustAResearcher/electrum/issues"
+RELEASE_NOTES_URL = "https://raw.githubusercontent.com/JustAResearcher/electrum/refs/heads/meowcoin/RELEASE-NOTES"
 BIP39_WALLET_FORMATS = read_json('bip39_wallet_formats.json')
+
+
+# Meowcoin block-header activation timestamps (from Meowcoin Core kernel/chainparams.cpp).
+# Used by blockchain.py to detect 80-byte vs 120-byte header format.
+KAWPOW_ACTIVATION_TIME_MAINNET = 1662493424
+KAWPOW_ACTIVATION_TIME_TESTNET = 1661833868
+
+# AuxPoW version flag (bit 8): blocks with this bit set use the 80-byte
+# pure header on the wire (electrs-mewc strips the AuxPoW blob server-side).
+VERSION_AUXPOW_BIT = 0x100
 
 
 class AbstractNet:
@@ -80,6 +90,7 @@ class AbstractNet:
     XPRV_HEADERS_INV: Mapping[int, str]
     XPUB_HEADERS: Mapping[str, int]
     XPUB_HEADERS_INV: Mapping[int, str]
+    KAWPOW_ACTIVATION_TIME: int = 0  # 0 means "always pre-KAWPOW" (regtest etc.)
 
     @classmethod
     def max_checkpoint(cls) -> int:
@@ -137,19 +148,27 @@ class AbstractNet:
         return cls.NET_NAME
 
 
-class BitcoinMainnet(AbstractNet):
+class MeowcoinMainnet(AbstractNet):
 
     NET_NAME = "mainnet"
     TESTNET = False
-    WIF_PREFIX = 0x80
-    ADDRTYPE_P2PKH = 0
-    ADDRTYPE_P2SH = 5
-    SEGWIT_HRP = "bc"
-    BOLT11_HRP = SEGWIT_HRP
-    GENESIS = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
+    # WIF private-key prefix (Meowcoin uses 112 = 0x70).
+    WIF_PREFIX = 112
+    # P2PKH addresses start with 'M' (version byte 50).
+    ADDRTYPE_P2PKH = 50
+    # P2SH addresses start with 'm' (version byte 122).
+    ADDRTYPE_P2SH = 122
+    SEGWIT_HRP = "mewc"
+    BOLT11_HRP = SEGWIT_HRP  # Lightning is not deployed on Meowcoin; kept to satisfy code paths.
+    # Meowcoin genesis (X16R hash, asserted by Meowcoin Core for testnet; mainnet hash matches).
+    GENESIS = "000000edd819220359469c54f2614b5602ebc775ea67a64602f354bdaa320f70"
+    # Default Electrum protocol ports for electrs-mewc (TCP / TLS).
     DEFAULT_PORTS = {'t': '50001', 's': '50002'}
-    BLOCK_HEIGHT_FIRST_LIGHTNING_CHANNELS = 497000
+    # Lightning is not deployed on Meowcoin.
+    BLOCK_HEIGHT_FIRST_LIGHTNING_CHANNELS = 0
+    KAWPOW_ACTIVATION_TIME = KAWPOW_ACTIVATION_TIME_MAINNET
 
+    # Standard BIP32 extended-key version bytes (same as Bitcoin/Meowcoin Core).
     XPRV_HEADERS = {
         'standard':    0x0488ade4,  # xprv
         'p2wpkh-p2sh': 0x049d7878,  # yprv
@@ -166,30 +185,28 @@ class BitcoinMainnet(AbstractNet):
         'p2wsh':       0x02aa7ed3,  # Zpub
     }
     XPUB_HEADERS_INV = inv_dict(XPUB_HEADERS)
-    BIP44_COIN_TYPE = 0
+    # Meowcoin BIP44 coin type (registered: 1669).
+    BIP44_COIN_TYPE = 1669
     LN_REALM_BYTE = 0
-    LN_DNS_SEEDS = [
-        'nodes.lightning.directory.',
-        'lseed.bitcoinstats.com.',
-        'lseed.darosior.ninja',
-    ]
+    LN_DNS_SEEDS = []  # Lightning not deployed on Meowcoin.
 
     @classmethod
     def datadir_subdir(cls):
         return None
 
 
-class BitcoinTestnet(AbstractNet):
+class MeowcoinTestnet(AbstractNet):
 
     NET_NAME = "testnet"
     TESTNET = True
-    WIF_PREFIX = 0xef
-    ADDRTYPE_P2PKH = 111
-    ADDRTYPE_P2SH = 196
-    SEGWIT_HRP = "tb"
+    WIF_PREFIX = 114
+    ADDRTYPE_P2PKH = 109  # 'm'
+    ADDRTYPE_P2SH = 124
+    SEGWIT_HRP = "tmewc"
     BOLT11_HRP = SEGWIT_HRP
-    GENESIS = "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"
+    GENESIS = "000000eaab417d6dfe9bd75119972e1d07ecfe8ff655bef7c2acb3d9a0eeed81"
     DEFAULT_PORTS = {'t': '51001', 's': '51002'}
+    KAWPOW_ACTIVATION_TIME = KAWPOW_ACTIVATION_TIME_TESTNET
 
     XPRV_HEADERS = {
         'standard':    0x04358394,  # tprv
@@ -209,54 +226,24 @@ class BitcoinTestnet(AbstractNet):
     XPUB_HEADERS_INV = inv_dict(XPUB_HEADERS)
     BIP44_COIN_TYPE = 1
     LN_REALM_BYTE = 1
-    LN_DNS_SEEDS = [  # TODO investigate this again
-        #'test.nodes.lightning.directory.',  # times out.
-        #'lseed.bitcoinstats.com.',  # ignores REALM byte and returns mainnet peers...
-    ]
-
-
-class BitcoinTestnet4(BitcoinTestnet):
-
-    NET_NAME = "testnet4"
-    GENESIS = "00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043"
     LN_DNS_SEEDS = []
 
 
-class BitcoinRegtest(BitcoinTestnet):
+class MeowcoinRegtest(MeowcoinTestnet):
 
     NET_NAME = "regtest"
-    SEGWIT_HRP = "bcrt"
+    SEGWIT_HRP = "mewcrt"
     BOLT11_HRP = SEGWIT_HRP
+    # Regtest genesis is recomputed at first run; placeholder that matches Meowcoin Core regtest seed.
     GENESIS = "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"
     LN_DNS_SEEDS = []
+    KAWPOW_ACTIVATION_TIME = 0  # regtest stays on legacy 80-byte format
 
 
-class BitcoinSimnet(BitcoinTestnet):
-
-    NET_NAME = "simnet"
-    WIF_PREFIX = 0x64
-    ADDRTYPE_P2PKH = 0x3f
-    ADDRTYPE_P2SH = 0x7b
-    SEGWIT_HRP = "sb"
-    BOLT11_HRP = SEGWIT_HRP
-    GENESIS = "683e86bd5c6d110d91b94b97137ba6bfe02dbbdb8e3dff722a669b5d69d77af6"
-    LN_DNS_SEEDS = []
-
-
-class BitcoinSignet(BitcoinTestnet):
-
-    NET_NAME = "signet"
-    BOLT11_HRP = "tbs"
-    GENESIS = "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6"
-    LN_DNS_SEEDS = []
-
-
-class BitcoinMutinynet(BitcoinTestnet):
-
-    NET_NAME = "mutinynet"
-    BOLT11_HRP = "tbs"
-    GENESIS = "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6"
-    LN_DNS_SEEDS = []
+# Aliases kept so any external imports of the old Bitcoin* names still resolve.
+BitcoinMainnet = MeowcoinMainnet
+BitcoinTestnet = MeowcoinTestnet
+BitcoinRegtest = MeowcoinRegtest
 
 
 NETS_LIST = tuple(all_subclasses(AbstractNet))  # type: Sequence[Type[AbstractNet]]
@@ -268,4 +255,4 @@ assert len(NETS_LIST) == len(set([chain.cli_flag() for chain in NETS_LIST])), "c
 assert len(NETS_LIST) == len(set([chain.config_key() for chain in NETS_LIST])), "config_key must be unique for each concrete AbstractNet"
 
 # don't import net directly, import the module instead (so that net is singleton)
-net = BitcoinMainnet  # type: Type[AbstractNet]
+net = MeowcoinMainnet  # type: Type[AbstractNet]

@@ -10,8 +10,9 @@ from .bitcoin import COIN, TOTAL_COIN_SUPPLY_LIMIT_IN_BTC
 from .bolt11 import decode_bolt11_invoice, BOLT11DecodeException
 
 # note: when checking against these, use .lower() to support case-insensitivity
-BITCOIN_BIP21_URI_SCHEME = 'bitcoin'
-LIGHTNING_URI_SCHEME = 'lightning'
+# Meowcoin uses 'meowcoin:' as its BIP21 URI scheme (analogous to 'bitcoin:').
+BITCOIN_BIP21_URI_SCHEME = 'meowcoin'
+LIGHTNING_URI_SCHEME = 'lightning'  # unused on Meowcoin (no LN deployment)
 
 # note: URI scheme handler registrations are duplicated all over the codebase:
 # - for Android:  contrib/android/bitcoin_intent.xml
