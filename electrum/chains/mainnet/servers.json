@@ -1,15 +1,18 @@
 {
-    "meowelectrum2.testtopper.biz": {
+    "electrs.mewccrypto.com": {
+        "pruning": "-",
+        "s": "50002",
+        "version": "1.4.2"
+    },
+    "electrs2.mewccrypto.com": {
         "pruning": "-",
         "s": "50002",
         "t": "50001",
         "version": "1.4.2"
     },
-    "electrum.mewccrypto.com": {
+    "electrs3.meowcoin.org": {
         "pruning": "-",
         "s": "50002",
-        "t": "50001",
         "version": "1.4.2"
     }
 }
-
