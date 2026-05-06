@@ -75,27 +75,20 @@ jobs:
           path: contrib/build-wine/dist/*
 
   # --------------------------------------------------------------------------
-  # macOS .dmg (native PyInstaller on macos-latest)
-  # --------------------------------------------------------------------------
-  macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
-          fetch-depth: 0
-
-      - name: Build macOS app + dmg
-        run: |
-          ./contrib/osx/make_osx.sh
-
-      - name: List artifacts
-        run: ls -la dist/ || true
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macos
-          path: dist/*.dmg
+  # macOS .dmg — DISABLED for v1.
+  # contrib/osx/make_osx.sh has a long native-build chain (Python 3.12.10
+  # from .pkg, then libsecp256k1, libusb, libzbar from source). Each step
+  # is brittle on the current macos-latest runner image (zbar's autoconf
+  # links against the wrong arch on arm64, etc.). Re-enable once a more
+  # robust build is in place — likely by replacing the from-source dep
+  # builds with brew formulae or pre-built dylibs cached in the repo.
+  # macos:
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: ./contrib/osx/make_osx.sh
+  #     - uses: actions/upload-artifact@v4
+  #       with: { name: macos, path: dist/*.dmg }
 
   # --------------------------------------------------------------------------
   # Android APK (buildozer + Android SDK via Docker)
@@ -126,7 +119,7 @@ jobs:
   # block uploading the others.
   # --------------------------------------------------------------------------
   release-upload:
-    needs: [linux-sdist, windows, macos, android]
+    needs: [linux-sdist, windows, android]
     if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
