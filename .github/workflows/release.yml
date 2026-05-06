@@ -16,20 +16,29 @@ permissions:
 
 jobs:
   # --------------------------------------------------------------------------
-  # Linux AppImage — DISABLED.
-  # The upstream AppImage build pins exact Alpine package versions in the
-  # type2-runtime Docker image (clang19=19.1.4-r0, bash=5.2.37-r0, etc.) that
-  # have since been bumped in Alpine repos, so `apk add` fails during the
-  # type2-runtime build step. Linux users can install from the sdist
-  # (`pip install Electrum-<version>.tar.gz`) until the runtime pins are
-  # updated upstream, or until we vendor a pre-built type2-runtime binary.
-  # linux-appimage:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - run: ./contrib/build-linux/appimage/build.sh
-  #     - uses: actions/upload-artifact@v4
-  #       with: { name: linux-appimage, path: contrib/build-linux/appimage/dist/* }
+  # Linux AppImage — uses contrib/build-linux/appimage/, Docker-based.
+  # make_type2_runtime.sh now downloads the pre-built runtime-x86_64 from the
+  # AppImage `continuous` release instead of compiling it inside an Alpine
+  # container with stale package pins.
+  # --------------------------------------------------------------------------
+  linux-appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Build AppImage
+        run: ./contrib/build-linux/appimage/build.sh
+
+      - name: List artifacts
+        run: ls -la contrib/build-linux/appimage/dist/ || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: contrib/build-linux/appimage/dist/*
 
   # --------------------------------------------------------------------------
   # Linux source tarball (sdist) — pure Python, fast
@@ -75,23 +84,37 @@ jobs:
           path: contrib/build-wine/dist/*
 
   # --------------------------------------------------------------------------
-  # macOS .dmg — DISABLED for v1.
-  # contrib/osx/make_osx.sh has a long native-build chain (Python 3.12.10
-  # from .pkg, then libsecp256k1, libusb, libzbar from source). Each step
-  # is brittle on the current macos-latest runner image (zbar's autoconf
-  # links against the wrong arch on arm64, etc.). Re-enable once a more
-  # robust build is in place — likely by replacing the from-source dep
-  # builds with brew formulae or pre-built dylibs cached in the repo.
-  # macos:
-  #   runs-on: macos-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - run: ./contrib/osx/make_osx.sh
-  #     - uses: actions/upload-artifact@v4
-  #       with: { name: macos, path: dist/*.dmg }
+  # macOS .dmg (native PyInstaller on macos-latest)
+  # libzbar now comes from brew instead of being built from source — see
+  # contrib/osx/make_osx.sh.
+  # --------------------------------------------------------------------------
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Build macOS app + dmg
+        run: ./contrib/osx/make_osx.sh
+
+      - name: List artifacts
+        run: ls -la dist/ || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/*.dmg
 
   # --------------------------------------------------------------------------
   # Android APK (buildozer + Android SDK via Docker)
+  #
+  # Cold first run takes ~4-5h (downloads ~5 GB Android SDK + NDK, then
+  # cross-compiles CPython + libffi + openssl + sqlite + libsecp256k1 + Qt6
+  # + PyQt6 for each ABI). Caching .buildozer/ + .buildozer_qml/ between
+  # runs cuts subsequent runs to ~15 min. Cache key includes the spec hash
+  # + p4a recipes hash so any toolchain bump invalidates cleanly.
   # --------------------------------------------------------------------------
   android:
     runs-on: ubuntu-latest
@@ -101,9 +124,18 @@ jobs:
           ref: ${{ github.event.inputs.tag || github.ref }}
           fetch-depth: 0
 
+      - name: Cache buildozer toolchain + cross-compiled deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            .buildozer
+            .buildozer_qml
+          key: buildozer-${{ runner.os }}-${{ hashFiles('contrib/android/buildozer_qml.spec', 'contrib/android/p4a_recipes/**', 'contrib/android/Dockerfile') }}
+          restore-keys: |
+            buildozer-${{ runner.os }}-
+
       - name: Build Android APK
-        run: |
-          ./contrib/android/build.sh qml all release-unsigned
+        run: ./contrib/android/build.sh qml all release-unsigned
 
       - name: List artifacts
         run: ls -la dist/ || true
@@ -119,7 +151,7 @@ jobs:
   # block uploading the others.
   # --------------------------------------------------------------------------
   release-upload:
-    needs: [linux-sdist, windows, android]
+    needs: [linux-appimage, linux-sdist, windows, macos, android]
     if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:

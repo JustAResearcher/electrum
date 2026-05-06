@@ -1,16 +1,71 @@
-# Electrum - Lightweight Bitcoin client
+# Electrum-MEWC — Lightweight Meowcoin client
 
 ```
 Licence: MIT Licence
-Author: Thomas Voegtlin
+Upstream: spesmilo/electrum (Bitcoin) v4.7.2
 Language: Python (>= 3.10)
-Homepage: https://electrum.org/
+Repository: https://github.com/JustAResearcher/electrum (branch: meowcoin)
+Releases:   https://github.com/JustAResearcher/electrum/releases
 ```
 
-[![Build Status](https://api.cirrus-ci.com/github/spesmilo/electrum.svg?branch=master)](https://cirrus-ci.com/github/spesmilo/electrum)
-[![Test coverage statistics](https://coveralls.io/repos/github/spesmilo/electrum/badge.svg?branch=master)](https://coveralls.io/github/spesmilo/electrum?branch=master)
-[![Help translate Electrum online](https://d322cqt584bo4o.cloudfront.net/electrum/localized.svg)](https://crowdin.com/project/electrum)
+A Meowcoin (Apex v30.2+) port of the [Electrum](https://github.com/spesmilo/electrum) Bitcoin wallet, adapted to talk to [`electrs-mewc`](https://github.com/Meowcoin-Foundation/electrs-mewc) backends and parse Meowcoin's variable-size block headers (80-byte pre-KAWPOW / AuxPoW + 120-byte KAWPOW/MEOWPOW).
 
+## Quick install
+
+**Windows**: download `electrum-vX.Y.Z-mewc.N-setup.exe` from the [releases page](https://github.com/JustAResearcher/electrum/releases).
+
+**Linux / from source**:
+```
+sudo apt-get install libsecp256k1-dev
+pip install Electrum-X.Y.Z+mewc.N.tar.gz   # from the releases page
+```
+
+URI scheme is `meowcoin:`.
+
+## What's adapted from upstream Electrum
+
+- **Chainparams** ([electrum/constants.py](electrum/constants.py)): P2PKH=50 (`M…`), P2SH=122 (`m…`), WIF=112, bech32 `mewc`/`tmewc`, BIP44=1669, default ports 50001/50002.
+- **Variable-size headers** ([electrum/blockchain.py](electrum/blockchain.py)): 80-byte (pre-KAWPOW + AuxPoW) and 120-byte (KAWPOW/MEOWPOW) parsing, with disk-padding to 120 so seek-by-height arithmetic stays simple.
+- **Trust model**: KAWPOW/MEOWPOW block hashes can't be computed client-side without a ProgPoW implementation, so `verify_header` is a no-op and `can_connect` skips `prev_hash` / PoW checks. Chain integrity is delegated to the `electrs-mewc` backend; tx signing, addresses, merkle proofs, and confirmations work normally.
+- **Branding** ([electrum/gui/icons/](electrum/gui/icons/)): Meowcoin Foundation icon set (gold atom + pixel cat). All `Bitcoin`/`BTC` user-visible strings rebranded to `Meowcoin`/`MEWC`. URI scheme is `meowcoin:`.
+- **Lightning Network is disabled**: Meowcoin has no LN deployment, so `LIGHTNING_AVAILABLE = False` in `MeowcoinMainnet` short-circuits `can_have_lightning()` and hides all enable-LN UI.
+- **OS integration**: `electrum.desktop`, NSIS Windows installer, macOS pyinstaller, Android intent filter and buildozer spec all register the `meowcoin:` scheme.
+
+## Known limitations (v1)
+
+- **No client-side PoW verification** (see "Trust model" above).
+- **No asset support yet**: Meowcoin's RIP5/HIP2 asset transactions (issue, transfer, restricted, qualifier, message-channel) are not parsed by this wallet. Inputs/outputs containing assets get parsed as plain MEWC.
+- **macOS .dmg not yet shipped**: upstream's `make_osx.sh` builds libzbar from source, which fails on `macos-latest` arm64. Tracked.
+- **AppImage not yet shipped**: upstream type2-runtime Dockerfile pins outdated Alpine package versions. Tracked.
+- **Hardware wallet (Trezor / Ledger / Coldcard)** entries don't natively know Meowcoin's BIP44 coin type 1669; they treat addresses as Bitcoin. Real support would need device-firmware patches.
+- **Exchange-rate price feeds** in `electrum/exchange_rate.py` query Bitcoin price APIs unchanged — fiat values shown for MEWC will be wrong until MEWC-specific endpoints are wired in.
+
+## Default servers
+
+```json
+{
+  "meowelectrum2.testtopper.biz": {"s": "50002", "t": "50001", "version": "1.4.2", "pruning": "-"},
+  "electrum.mewccrypto.com":      {"s": "50002", "t": "50001", "version": "1.4.2", "pruning": "-"}
+}
+```
+
+Both run ElectrumX-Meowcoin 2.x and serve KAWPOW/MEOWPOW (120-byte) headers.
+
+## Building / contributing
+
+The CI workflow at [.github/workflows/release.yml](.github/workflows/release.yml) builds Windows installer + Linux sdist + Android APK on tag push (`v*`). Pre-existing upstream build scripts in [contrib/](contrib/) (`build-linux/sdist`, `build-wine`, `osx`, `android`) are reused; the PEP 440 version string lives in [electrum/version.py](electrum/version.py).
+
+To verify the chainparams + header round-trip without setting up the full GUI deps:
+
+```bash
+python C:/Source/_mewc_research/smoke_test.py   # see commit history; fakes ecc to skip libsecp DLL
+```
+
+## Upstream
+
+This is a fork of [spesmilo/electrum](https://github.com/spesmilo/electrum) v4.7.2. Bug reports and ideas that aren't Meowcoin-specific should be reported there.
+
+---
 
 ## Getting started
 

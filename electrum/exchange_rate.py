@@ -443,25 +443,52 @@ class CoinDesk(ExchangeBase):
 
 
 class CoinGecko(ExchangeBase):
+    """Meowcoin price feed via CoinGecko's `meowcoin` coin id (MEWC ticker).
+
+    Replaces the upstream Bitcoin-targeted CoinGecko adapter; we deliberately
+    keep the class name "CoinGecko" so currencies.json layout is unchanged.
+    """
+
+    # CoinGecko's full vs_currencies list (fetched 2026-05-06). Trimmed to
+    # the major fiat currencies plus a few crypto bases that the Electrum
+    # GUI offers as fiat selectors.
+    _CG_VS_CURRENCIES = [
+        "AED", "ARS", "AUD", "BDT", "BHD", "BMD", "BRL", "CAD", "CHF", "CLP",
+        "CNY", "CZK", "DKK", "EUR", "GBP", "GEL", "HKD", "HUF", "IDR", "ILS",
+        "INR", "JPY", "KRW", "KWD", "LKR", "MMK", "MXN", "MYR", "NGN", "NOK",
+        "NZD", "PHP", "PKR", "PLN", "RUB", "SAR", "SEK", "SGD", "THB", "TRY",
+        "TWD", "UAH", "USD", "VEF", "VND", "ZAR",
+    ]
 
     async def get_rates(self, ccy):
-        json = await self.get_json('api.coingecko.com', '/api/v3/exchange_rates')
-        return dict([(ccy.upper(), to_decimal(d['value']))
-                     for ccy, d in json['rates'].items() if d.get('value') is not None])
+        # Single request returns MEWC priced in every supported fiat at once.
+        vs = ",".join(c.lower() for c in self._CG_VS_CURRENCIES)
+        json = await self.get_json(
+            'api.coingecko.com',
+            f"/api/v3/simple/price?ids=meowcoin&vs_currencies={vs}",
+        )
+        meowcoin = json.get('meowcoin', {})
+        return {ccy_code.upper(): to_decimal(meowcoin[ccy_code])
+                for ccy_code in meowcoin
+                if meowcoin.get(ccy_code) is not None}
+
+    async def get_currencies(self):
+        # Override the default `get_rates(ccy="USD").keys()` discovery — we
+        # already know our static list, no need to ping the network at startup
+        # to populate currencies.json.
+        return list(self._CG_VS_CURRENCIES)
 
     def history_ccys(self):
-        # CoinGecko seems to have historical data for all ccys it supports
-        return CURRENCIES[self.name()]
+        return CURRENCIES.get(self.name(), self._CG_VS_CURRENCIES)
 
     async def request_history(self, ccy):
         # ref https://docs.coingecko.com/v3.0.1/reference/coins-id-market-chart
+        # Public API caps free history at 365 days.
         num_days = 365
-        # Setting `num_days = "max"` started erroring (around 2024-04) with:
-        # > Your request exceeds the allowed time range. Public API users are limited to querying
-        # > historical data within the past 365 days. Upgrade to a paid plan to enjoy full historical data access
-        history = await self.get_json('api.coingecko.com',
-                                      f"/api/v3/coins/bitcoin/market_chart?vs_currency={ccy}&days={num_days}")
-
+        history = await self.get_json(
+            'api.coingecko.com',
+            f"/api/v3/coins/meowcoin/market_chart?vs_currency={ccy.lower()}&days={num_days}",
+        )
         return dict([(timestamp_to_datetime(h[0]/1000, utc=True).strftime('%Y-%m-%d'), str(h[1]))
                      for h in history['prices']])
 

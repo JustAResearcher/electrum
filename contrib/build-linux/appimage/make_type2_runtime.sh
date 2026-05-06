@@ -18,19 +18,19 @@ if [ -f "$TYPE2_RUNTIME_REPO_DIR/runtime-x86_64" ]; then
     info "type2-runtime already built, skipping"
     exit 0
 fi
-clone_or_update_repo "$TYPE2_RUNTIME_REPO" "$TYPE2_RUNTIME_COMMIT" "$TYPE2_RUNTIME_REPO_DIR"
 
-# Apply patch to make runtime build reproducible
-info "Applying type2-runtime patch..."
-cd "$TYPE2_RUNTIME_REPO_DIR"
-git apply "$CONTRIB_APPIMAGE/patches/type2-runtime-reproducible-build.patch" || fail "Failed to apply runtime repo patch"
+# Building type2-runtime from source in the upstream Alpine Docker image
+# fails because the Dockerfile pins Alpine package versions
+# (clang19=19.1.4-r0, bash=5.2.37-r0, mimalloc2-dev=2.1.7-r0, ...) that have
+# since been bumped in Alpine repos and are no longer fetchable from
+# dl-cdn.alpinelinux.org. Until upstream rolls those pins forward, download
+# the pre-built `runtime-x86_64` AppImage publishes at the `continuous`
+# release on every push to its main branch.
+mkdir -p "$TYPE2_RUNTIME_REPO_DIR"
+RUNTIME_URL="https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64"
+info "downloading prebuilt type2-runtime from $RUNTIME_URL ..."
+curl -fL --retry 3 -o "$TYPE2_RUNTIME_REPO_DIR/runtime-x86_64" "$RUNTIME_URL" \
+    || fail "could not download prebuilt runtime-x86_64"
+chmod +x "$TYPE2_RUNTIME_REPO_DIR/runtime-x86_64"
 
-info "building type2-runtime in build container..."
-cd "$TYPE2_RUNTIME_REPO_DIR/scripts/docker"
-env ARCH=x86_64 ./build-with-docker.sh
-mv "./runtime-x86_64" "$TYPE2_RUNTIME_REPO_DIR/"
-
-# clean up the empty created 'out' dir to prevent permission issues
-rm -rf "$TYPE2_RUNTIME_REPO_DIR/out"
-
-info "runtime build successful: $(sha256sum "$TYPE2_RUNTIME_REPO_DIR/runtime-x86_64")"
+info "runtime download successful: $(sha256sum "$TYPE2_RUNTIME_REPO_DIR/runtime-x86_64")"

@@ -161,8 +161,14 @@ fi
 cp -f "$DLL_TARGET_DIR"/libsecp256k1.*.dylib "$PROJECT_ROOT/electrum" || fail "Could not copy libsecp256k1 dylib"
 
 if [ ! -f "$DLL_TARGET_DIR/libzbar.0.dylib" ]; then
-    info "Building ZBar dylib..."
-    "$CONTRIB"/make_zbar.sh || fail "Could not build ZBar dylib"
+    # Prefer brew-installed libzbar — building from source via make_zbar.sh
+    # fails to link on macos-latest arm64 (autoconf produces wrong link flags).
+    # Brew's zbar is already arm64-native and contains the same symbols.
+    info "Installing zbar via brew..."
+    brew list zbar >/dev/null 2>&1 || brew install zbar || fail "brew install zbar failed"
+    BREW_ZBAR_DYLIB=$(find "$(brew --prefix zbar)/lib" -name 'libzbar.0.dylib' | head -1)
+    [[ -f "$BREW_ZBAR_DYLIB" ]] || fail "could not locate brew's libzbar.0.dylib (looked under $(brew --prefix zbar)/lib)"
+    cp -f "$BREW_ZBAR_DYLIB" "$DLL_TARGET_DIR/libzbar.0.dylib"
 else
     info "Skipping ZBar build: reusing already built dylib."
 fi

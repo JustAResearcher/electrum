@@ -91,6 +91,9 @@ class AbstractNet:
     XPUB_HEADERS: Mapping[str, int]
     XPUB_HEADERS_INV: Mapping[int, str]
     KAWPOW_ACTIVATION_TIME: int = 0  # 0 means "always pre-KAWPOW" (regtest etc.)
+    # Lightning Network support gate. False on Meowcoin (no LN deployment);
+    # gates can_have_lightning() so the enable UI is hidden everywhere.
+    LIGHTNING_AVAILABLE: bool = False
 
     @classmethod
     def max_checkpoint(cls) -> int:

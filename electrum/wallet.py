@@ -522,6 +522,11 @@ class Abstract_Wallet(ABC, Logger, EventListener):
 
     def can_have_lightning(self) -> bool:
         """ whether this wallet can create new channels """
+        # Meowcoin: Lightning Network is not deployed on the Meowcoin chain,
+        # so we hard-disable LN at the wallet capability level. This hides the
+        # "Enable Lightning" UI and prevents accidental channel-open attempts.
+        if not getattr(constants.net, 'LIGHTNING_AVAILABLE', False):
+            return False
         # we want static_remotekey to be a wallet address
         if not self.txin_type == 'p2wpkh':
             return False
