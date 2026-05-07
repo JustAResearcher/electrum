@@ -87,12 +87,23 @@ jobs:
           path: contrib/build-wine/dist/*
 
   # --------------------------------------------------------------------------
-  # macOS .dmg (native PyInstaller on macos-latest)
-  # libzbar now comes from brew instead of being built from source — see
+  # macOS .dmg (native PyInstaller).
+  #
+  # Pinned to macos-13 (Intel x86_64) instead of macos-latest (arm64).
+  # The python.org `python-3.12.10-macos11.pkg` is universal2, but
+  # pip-installed binary wheels (PyQt6.sip, _cffi_backend, cryptography,
+  # ...) end up x86_64-only when downloaded; PyInstaller's arm64
+  # subprocesses then can't dlopen them
+  # ("incompatible architecture (have 'x86_64', need 'arm64e' or 'arm64')").
+  # macos-13 makes the whole pipeline x86_64 so the wheel arch is consistent.
+  # The resulting .dmg is x86_64 — Apple Silicon users would need Rosetta to
+  # run it. Switching to a self-hosted arm64 runner (or paying for a beefier
+  # GitHub plan) is the long-term fix.
+  # libzbar comes from brew instead of being built from source — see
   # contrib/osx/make_osx.sh.
   # --------------------------------------------------------------------------
   macos:
-    runs-on: macos-latest
+    runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
         with:
@@ -171,7 +182,14 @@ jobs:
       - name: Flatten + checksum
         run: |
           mkdir -p release-files
-          find artifacts/ -type f -not -name 'SHA256SUMS' -exec cp -v {} release-files/ \;
+          # Only release the actual installer / archive artifacts, not every
+          # file that happens to live under one of the artifact directories.
+          # The Windows artifact in particular is a dir tree of Qt DLLs +
+          # the .exe(s); a naive find-everything-flatten uploaded 50+
+          # extraneous files (Qt6Core.dll, MSVCP140.dll, *.qml, …) before.
+          for pat in '*.exe' '*.AppImage' '*.dmg' '*.apk' '*.tar.gz'; do
+            find artifacts/ -type f -name "$pat" -exec cp -v {} release-files/ \;
+          done
           cd release-files && sha256sum * > SHA256SUMS && cat SHA256SUMS
 
       - name: Determine tag

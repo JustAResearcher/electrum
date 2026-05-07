@@ -1,4 +1,4 @@
-ELECTRUM_VERSION = '4.7.2+mewc.8'  # Electrum-MEWC: PEP 440 local-version on upstream Electrum 4.7.2
+ELECTRUM_VERSION = '4.7.2+mewc.9'  # Electrum-MEWC: PEP 440 local-version on upstream Electrum 4.7.2
 
 PROTOCOL_VERSION_MIN = '1.4'     # electrum protocol
 PROTOCOL_VERSION_MAX = '1.6'
