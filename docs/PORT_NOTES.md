@@ -121,11 +121,18 @@ no protocol dependencies.
 
 ### 1.3 Hardware wallet support
 
-**Status**: hardware wallet plugins are present in
-`electrum/plugins/{trezor,ledger,coldcard,bitbox02,jade,keepkey,safe_t}/`
-but they all derive addresses using BIP44 coin type 0 (Bitcoin) or whatever
-the device firmware allows. Meowcoin's registered BIP44 coin type is **1669**
-([SLIP-44](https://github.com/satoshilabs/slips/blob/master/slip-0044.md)).
+**Status (as of v4.7.2-mewc.6)**: hardware wallet plugins are now **disabled
+at the loader level** by a `HW_WALLETS_SUPPORTED = False` gate on
+`MeowcoinMainnet`, checked in `electrum/plugin.py:find_directory_plugins()`
+before the plugin gets registered. Plugins still ship in the source tree
+(`electrum/plugins/{trezor,ledger,coldcard,bitbox02,jade,keepkey,safe_t}/`)
+so re-enabling is a one-line config change once vendor firmware lands.
+
+The reason: Meowcoin's registered BIP44 coin type is **1669**
+([SLIP-44](https://github.com/satoshilabs/slips/blob/master/slip-0044.md))
+and no shipping vendor firmware recognises it. Loading these plugins
+without firmware support produces silent address-derivation refusals at
+sign time.
 
 **Why this is a problem**: a hardware wallet device asked to derive an
 address at `m/44'/1669'/0'/0/0` will refuse — its firmware doesn't recognize
@@ -170,16 +177,31 @@ For continuity if/when this doc is read in a future session:
 - Wire-format detection: `electrum/blockchain.py:_wire_header_size()`
 - Lightning hard-disabled: `electrum/wallet.py:can_have_lightning()`
   via `constants.LIGHTNING_AVAILABLE`
+- Hardware wallets hard-disabled at plugin loader: `electrum/plugin.py`
+  via `constants.HW_WALLETS_SUPPORTED`
 - BIP21 URI scheme `meowcoin:`: `electrum/bip21.py`
 - MEWC price feed via CoinGecko `meowcoin` id: `electrum/exchange_rate.py`
-- Server list: `electrum/chains/mainnet/servers.json` — two
-  ElectrumX-Meowcoin 2.x hosts, both confirmed serving 120-byte KAWPOW
-  headers and at chain tip
+- Server list: `electrum/chains/mainnet/servers.json` — three
+  electrs-mewc deployments (`electrs-esplora 0.4.1`), all confirmed
+  serving 120-byte KAWPOW headers
+- Auto-update checker: `electrum/gui/qt/update_checker.py` points at
+  this fork's GitHub Releases API; signature verification skipped
+  (trust shifts to the HTTPS connection to api.github.com)
 - OS integration files (`.desktop`, NSIS, pyinstaller, Android intent)
   all register `meowcoin:` URI scheme
 - CI: `.github/workflows/release.yml` builds Linux sdist + AppImage,
   Windows installer + portable, macOS .dmg, Android .apk on tag push;
   uploads to the GitHub Release with SHA256SUMS
+
+### 2.1 Testnet status
+
+`electrum/chains/testnet/servers.json` is intentionally empty (`{}`).
+No public Meowcoin testnet electrs / ElectrumX deployment is reachable
+on the obvious hostnames (`testnet-electrs.mewccrypto.com`,
+`electrs-testnet.mewccrypto.com`, `testnet.mewccrypto.com`,
+`testnet-electrs.meowcoin.org`, etc.). Once one is stood up, drop the
+hostname and ports into `chains/testnet/servers.json` and the
+`--testnet` flag works.
 
 ## 3. Verified end-to-end against live network (2026-05-06)
 

@@ -1,3 +1,15 @@
+## Electrum-MEWC (Meowcoin port)
+
+JustAResearcher - Meowcoin port: chainparams, variable-size header
+                  parser, electrs-mewc integration, UI rebrand, CI.
+
+This is a fork of spesmilo/electrum v4.7.2; the original Electrum
+authors below all contributed to the wallet's core code that this
+port reuses.
+
+
+## Upstream Electrum (Bitcoin)
+
 ThomasV - Creator and maintainer.
 Animazing / Tachikoma - Styled the new GUI. Mac version.
 Azelphur - GUI stuff.

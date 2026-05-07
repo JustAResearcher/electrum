@@ -3,15 +3,12 @@
 # file LICENCE or http://www.opensource.org/licenses/mit-license.php
 
 import asyncio
-import base64
 from typing import Optional
 
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import QVBoxLayout, QLabel, QProgressBar, QHBoxLayout, QPushButton, QDialog
 
 from electrum import version
-from electrum import constants
-from electrum.bitcoin import verify_usermessage_with_address
 from electrum.i18n import _
 from electrum.util import make_aiohttp_session
 from electrum.logging import Logger
@@ -20,13 +17,17 @@ from electrum._vendor.distutils.version import StrictVersion
 
 
 class UpdateCheck(QDialog, Logger):
-    url = "https://electrum.org/version"
-    download_url = "https://electrum.org/#download"
+    # Electrum-MEWC: point the update checker at this fork's GitHub
+    # Releases instead of upstream Electrum's signed-version feed.
+    url = "https://api.github.com/repos/JustAResearcher/electrum/releases/latest"
+    download_url = "https://github.com/JustAResearcher/electrum/releases/latest"
 
-    VERSION_ANNOUNCEMENT_SIGNING_KEYS = (
-        "13xjmVAB1EATPP8RshTE8S8sNwwSUM9p1P",  # ThomasV (since 3.3.4)
-        "1Nxgk6NTooV4qZsX5fdqQwrLjYcsQZAfTg",  # ghost43 (since 4.1.2)
-    )
+    # Upstream Electrum's signing keys do not sign our releases — kept here
+    # only so other code referencing this constant doesn't break. Signature
+    # verification is bypassed in get_update_info() below; trust shifts to
+    # the HTTPS connection to api.github.com plus the user's choice to install
+    # this fork in the first place.
+    VERSION_ANNOUNCEMENT_SIGNING_KEYS = ()
 
     def __init__(self, *, latest_version=None):
         QDialog.__init__(self)
@@ -105,34 +106,29 @@ class UpdateCheckThread(QThread, Logger):
         self._fut = None  # type: Optional[asyncio.Future]
 
     async def get_update_info(self):
-        # note: Use long timeout here as it is not critical that we get a response fast,
-        #       and it's bad not to get an update notification just because we did not wait enough.
+        # Electrum-MEWC: GitHub Releases API returns
+        #   {"tag_name": "v4.7.2-mewc.4", "name": "Electrum-MEWC v4.7.2-mewc.4", ...}
+        # We parse the tag, strip the leading "v" and the "-mewc.N" suffix to
+        # produce a StrictVersion-compatible string for comparison against
+        # `version.ELECTRUM_VERSION`'s upstream-Electrum portion.
         async with make_aiohttp_session(proxy=self.network.proxy, timeout=120) as session:
             async with session.get(UpdateCheck.url) as result:
-                signed_version_dict = await result.json(content_type=None)
-                # example signed_version_dict:
-                # {
-                #     "version": "3.9.9",
-                #     "signatures": {
-                #         "1Lqm1HphuhxKZQEawzPse8gJtgjm9kUKT4": "IA+2QG3xPRn4HAIFdpu9eeaCYC7S5wS/sDxn54LJx6BdUTBpse3ibtfq8C43M7M1VfpGkD5tsdwl5C6IfpZD/gQ="
-                #     }
-                # }
-                version_num = signed_version_dict['version']
-                sigs = signed_version_dict['signatures']
-                for address, sig in sigs.items():
-                    if address not in UpdateCheck.VERSION_ANNOUNCEMENT_SIGNING_KEYS:
-                        continue
-                    sig = base64.b64decode(sig, validate=True)
-                    msg = version_num.encode('utf-8')
-                    if verify_usermessage_with_address(
-                        address=address, sig65=sig, message=msg,
-                        net=constants.BitcoinMainnet
-                    ):
-                        self.logger.info(f"valid sig for version announcement '{version_num}' from address '{address}'")
+                release = await result.json(content_type=None)
+                tag = release.get('tag_name', '')
+                if not tag:
+                    raise Exception(f'GitHub release has no tag_name: {release!r}')
+                # Strip "v" prefix and any "-mewc.N" / "+mewc.N" suffix so
+                # StrictVersion can parse e.g. "4.7.2".
+                stripped = tag.lstrip('v')
+                for sep in ('-mewc.', '+mewc.', '-mewc', '+mewc'):
+                    if sep in stripped:
+                        stripped = stripped.split(sep, 1)[0]
                         break
-                else:
-                    raise Exception('no valid signature for version announcement')
-                return StrictVersion(version_num.strip())
+                self.logger.info(
+                    f"latest GitHub release tag={tag!r}, parsed version={stripped!r} "
+                    f"(signature verification skipped — trust is the HTTPS connection to api.github.com)"
+                )
+                return StrictVersion(stripped.strip())
 
     def run(self):
         if not self.network:

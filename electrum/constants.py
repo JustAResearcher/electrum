@@ -94,6 +94,12 @@ class AbstractNet:
     # Lightning Network support gate. False on Meowcoin (no LN deployment);
     # gates can_have_lightning() so the enable UI is hidden everywhere.
     LIGHTNING_AVAILABLE: bool = False
+    # Hardware wallet support gate. False on Meowcoin until Trezor / Ledger /
+    # Coldcard / BitBox / Jade firmware adds an entry for SLIP-44 coin type
+    # 1669. Currently those devices treat the path as unknown and either
+    # refuse to derive or silently produce the wrong address.
+    # Gates plugin loading in electrum/plugin.py:find_directory_plugins().
+    HW_WALLETS_SUPPORTED: bool = False
 
     @classmethod
     def max_checkpoint(cls) -> int:

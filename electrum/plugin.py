@@ -46,6 +46,7 @@ from electrum_ecc import ECPrivkey, ECPubkey
 from ._vendor.distutils.version import StrictVersion
 from .version import ELECTRUM_VERSION
 from .i18n import _
+from . import constants
 from .util import (profiler, DaemonThread, UserCancelled, ThreadJob, UserFacingException, ChoiceItem,
                    make_dir, make_aiohttp_session)
 from . import bip32
@@ -123,6 +124,18 @@ class Plugins(DaemonThread):
                 self.logger.info(f"could not find manifest.json of plugin {name}, skipping...")
                 continue
             if 'fullname' not in d:
+                continue
+            # Meowcoin: skip hardware-wallet plugins unless the active chain
+            # advertises hw-wallet support. BIP44 coin type 1669 is not in any
+            # vendor firmware (Trezor / Ledger / Coldcard / etc.), so loading
+            # these plugins just produces silent address-derivation refusals
+            # at sign time. See docs/PORT_NOTES.md for the firmware-support
+            # roadmap.
+            ks_details = d.get('registers_keystore') or []
+            is_hw_plugin = bool(ks_details) and ks_details[0] == 'hardware'
+            if is_hw_plugin and not getattr(constants.net, 'HW_WALLETS_SUPPORTED', True):
+                _logger.info(f"skipping hardware-wallet plugin {name!r}: "
+                             f"{constants.net.NET_NAME!r} does not advertise HW_WALLETS_SUPPORTED")
                 continue
             d['path'] = module_path
             if not self.cmd_only:
