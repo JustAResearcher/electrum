@@ -200,11 +200,11 @@ python3 -m pip install --no-build-isolation --no-dependencies --no-binary :all: 
     -Ir ./contrib/deterministic-build/requirements.txt \
     || fail "Could not install requirements"
 
-info "Installing hardware wallet requirements..."
-python3 -m pip install --no-build-isolation --no-dependencies --no-binary :all: --only-binary cryptography \
-    --cache-dir "$PIP_CACHE_DIR" --no-warn-script-location \
-    -Ir ./contrib/deterministic-build/requirements-hw.txt \
-    || fail "Could not install hardware wallet requirements"
+info "Skipping hardware wallet requirements: Electrum-MEWC disables HW plugins"
+info "  at the loader level (constants.HW_WALLETS_SUPPORTED = False on Meowcoin)"
+info "  because no shipping vendor firmware supports SLIP-44 coin type 1669."
+info "  The hw deps trip over a Cython x86_64/arm64 arch mismatch on macos-latest"
+info "  and they're useless without firmware support anyway."
 
 info "Installing dependencies specific to binaries..."
 python3 -m pip install --no-build-isolation --no-dependencies --no-binary :all: --only-binary PyQt6,PyQt6-Qt6,cryptography \
