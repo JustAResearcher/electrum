@@ -47,13 +47,16 @@ datas = [
     (f"{PROJECT_ROOT}/{PYPKG}/gui/fonts", f"{PYPKG}/gui/fonts"),
 ]
 datas += collect_data_files(f"{PYPKG}.plugins")
-datas += collect_data_files('trezorlib')  # TODO is this needed? and same question for other hww libs
-datas += collect_data_files('safetlib')
-datas += collect_data_files('ckcc')
-datas += collect_data_files('bitbox02')
-
-# some deps rely on importlib metadata
-datas += copy_metadata('slip10')  # from trezor->slip10
+# Hardware-wallet libraries are NOT installed in the macOS build — Electrum-MEWC
+# disables HW wallet plugins at the loader level (constants.HW_WALLETS_SUPPORTED
+# = False) because no shipping vendor firmware recognises SLIP-44 coin type 1669.
+# trezorlib / safetlib / ckcc / bitbox02 / slip10 metadata copies removed; bring
+# them back when hw deps are re-installed.
+# datas += collect_data_files('trezorlib')
+# datas += collect_data_files('safetlib')
+# datas += collect_data_files('ckcc')
+# datas += collect_data_files('bitbox02')
+# datas += copy_metadata('slip10')  # from trezor->slip10
 
 # Exclude parts of Qt that we never use. Reduces binary size by tens of MBs. see #4815
 excludes = [
