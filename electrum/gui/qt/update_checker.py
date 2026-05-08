@@ -76,8 +76,23 @@ class UpdateCheck(QDialog, Logger):
         self.pb.hide()
 
     @staticmethod
+    def _strict_version_of(v: str) -> StrictVersion:
+        """Parse `version.ELECTRUM_VERSION` style strings (which may carry a
+        PEP 440 local-version suffix like '+mewc.9') into a StrictVersion.
+        StrictVersion only understands canonical pre-release suffixes; the
+        local-version segment is dropped for comparison purposes (we don't
+        downgrade a 4.7.2-mewc.10 install over a 4.7.2-mewc.9 latest).
+        """
+        stripped = v.strip()
+        for sep in ('+mewc.', '-mewc.', '+mewc', '-mewc'):
+            if sep in stripped:
+                stripped = stripped.split(sep, 1)[0]
+                break
+        return StrictVersion(stripped)
+
+    @staticmethod
     def is_newer(latest_version):
-        return latest_version > StrictVersion(version.ELECTRUM_VERSION)
+        return latest_version > UpdateCheck._strict_version_of(version.ELECTRUM_VERSION)
 
     def update_view(self, latest_version=None):
         if latest_version:

@@ -562,12 +562,20 @@ class Plugins(DaemonThread):
                 continue
             if self.cmd_only and not self.config.get(f'plugins.{name}.enabled'):
                 continue
+            # ELECTRUM_VERSION may carry a PEP 440 local-version suffix like
+            # '+mewc.9' that StrictVersion cannot parse; strip it for the
+            # min/max comparisons.
+            cur_ver_str = ELECTRUM_VERSION
+            for sep in ('+mewc.', '-mewc.', '+mewc', '-mewc'):
+                if sep in cur_ver_str:
+                    cur_ver_str = cur_ver_str.split(sep, 1)[0]
+                    break
             min_version = d.get('min_electrum_version')
-            if min_version and StrictVersion(min_version) > StrictVersion(ELECTRUM_VERSION):
+            if min_version and StrictVersion(min_version) > StrictVersion(cur_ver_str):
                 self.logger.info(f"version mismatch for zip plugin {filename}", exc_info=True)
                 continue
             max_version = d.get('max_electrum_version')
-            if max_version and StrictVersion(max_version) < StrictVersion(ELECTRUM_VERSION):
+            if max_version and StrictVersion(max_version) < StrictVersion(cur_ver_str):
                 self.logger.info(f"version mismatch for zip plugin {filename}", exc_info=True)
                 continue
 
