@@ -87,39 +87,34 @@ jobs:
           path: contrib/build-wine/dist/*
 
   # --------------------------------------------------------------------------
-  # macOS .dmg (native PyInstaller).
+  # macOS .dmg — DISABLED for the current release line.
   #
-  # Pinned to macos-13 (Intel x86_64) instead of macos-latest (arm64).
-  # The python.org `python-3.12.10-macos11.pkg` is universal2, but
-  # pip-installed binary wheels (PyQt6.sip, _cffi_backend, cryptography,
-  # ...) end up x86_64-only when downloaded; PyInstaller's arm64
-  # subprocesses then can't dlopen them
-  # ("incompatible architecture (have 'x86_64', need 'arm64e' or 'arm64')").
-  # macos-13 makes the whole pipeline x86_64 so the wheel arch is consistent.
-  # The resulting .dmg is x86_64 — Apple Silicon users would need Rosetta to
-  # run it. Switching to a self-hosted arm64 runner (or paying for a beefier
-  # GitHub plan) is the long-term fix.
-  # libzbar comes from brew instead of being built from source — see
-  # contrib/osx/make_osx.sh.
-  # --------------------------------------------------------------------------
-  macos:
-    runs-on: macos-13
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
-          fetch-depth: 0
-
-      - name: Build macOS app + dmg
-        run: ./contrib/osx/make_osx.sh
-
-      - name: List artifacts
-        run: ls -la dist/ || true
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macos
-          path: dist/*.dmg
+  # Long debugging trail (v1..v9) summary, in order of issue uncovered:
+  #   v1-4:  libzbar from-source link failure on macos-latest arm64
+  #          → fixed with `brew install zbar` in make_osx.sh
+  #   v5:    frozenlist's PEP 517 backend imports a non-existent symbol
+  #          from Cython.Build.Cythonize via suppress(ImportError)
+  #          → fixed with FROZENLIST_NO_EXTENSIONS=1
+  #   v7:    requirements-hw.txt install hits Cython arch mismatch
+  #          → fixed by skipping (HW plugins disabled at loader level)
+  #   v8:    PyInstaller copy_metadata('slip10') failed (slip10 not installed)
+  #          → fixed by commenting out hw-related metadata copies
+  #   v9:    macos-latest had x86_64 wheel / arm64 process arch mismatch.
+  #          Switched to macos-13 (Intel) — but the macos-13 runner pool
+  #          on GitHub Actions is exhausted (jobs queue 2+ hours with no
+  #          runner assigned), and macos-13 has been deprecated.
+  #
+  # Path forward documented in docs/PORT_NOTES.md: needs either a
+  # self-hosted arm64 runner (Meowcoin Foundation infrastructure) or a
+  # rewrite of make_osx.sh to use the macos-14 runner's pre-installed
+  # arm64 Python instead of the python.org universal2 pkg installer.
+  # macos:
+  #   runs-on: macos-14
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: ./contrib/osx/make_osx.sh
+  #     - uses: actions/upload-artifact@v4
+  #       with: { name: macos, path: dist/*.dmg }
 
   # --------------------------------------------------------------------------
   # Android APK (buildozer + Android SDK via Docker)
@@ -149,7 +144,11 @@ jobs:
             buildozer-${{ runner.os }}-
 
       - name: Build Android APK
-        run: ./contrib/android/build.sh qml all release-unsigned
+        # `all` loops armeabi-v7a + arm64-v8a + x86_64 (3 cold cross-compiles
+        # of CPython + Qt6 + PyQt6) which exceeds GitHub's 6h job cap. Pick
+        # one ABI; arm64-v8a covers all modern 64-bit Android phones. Once
+        # actions/cache@v4 has a warm tree we can switch back to `all`.
+        run: ./contrib/android/build.sh qml arm64-v8a release-unsigned
 
       - name: List artifacts
         run: ls -la dist/ || true
@@ -165,7 +164,7 @@ jobs:
   # block uploading the others.
   # --------------------------------------------------------------------------
   release-upload:
-    needs: [linux-appimage, linux-sdist, windows, macos, android]
+    needs: [linux-appimage, linux-sdist, windows, android]
     if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
