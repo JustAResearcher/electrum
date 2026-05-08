@@ -153,7 +153,9 @@ android.accept_sdk_license = True
 #android.add_jars = foo.jar,bar.jar,path/to/more/*.jar
 #android.add_jars = lib/android/zbar.jar
 
-android.add_jars = .buildozer/android/platform/*/build/libs_collections/Electrum/jar/*.jar
+# Path must match `package.name` (above) — buildozer writes
+# libs_collections/<package.name>/jar/*.jar; this glob then picks them up.
+android.add_jars = .buildozer/android/platform/*/build/libs_collections/ElectrumMEWC/jar/*.jar
 
 
 android.add_aars =
